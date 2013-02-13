@@ -1,0 +1,30 @@
+# NAME
+
+Kage - Perl Port of Kage
+
+# SYNOPSIS
+
+    # app.psgi
+    use strict;
+    use Kage;
+
+    my $server = Kage->new;
+    $server->add_master(production => (
+        host => "myapp.production.example.com",
+        port => 80
+    ));
+    $server->add_backend(staging => (
+        host => "myapp.staging.example.com",
+        port => 8000
+    ));
+    $server->on(select_backend => sub {
+        return [ "staging", "production" ]
+    });
+    $server->on(backend_finished => sub {
+        my $responses = shift;
+        my $data_production = $responses->{production}->{response}->decoded_content;
+        my $data_staging    = $responses->{staging}->{response}->decoded_content;
+        ...
+    });
+
+    $server->psgi_app;
