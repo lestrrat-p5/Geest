@@ -222,5 +222,13 @@ Kage - Perl Port of Kage
 
     $server->psgi_app;
 
+    # run it
+    twiggy -a app.psgi
+
+=head1 DESCRIPTION
+
+This is a port of kage to perl. Why does this exist? Because I felt like writing
+it, duh.
+
 =cut
 
