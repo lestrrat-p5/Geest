@@ -74,7 +74,10 @@ sub psgi_app {
 
             my $preq = Plack::Request->new($env);
             my $hreq = HTTP::Request->new($preq->method, $preq->uri);
-            $hreq->headers($preq->headers);
+            $preq->headers->scan(sub {
+                my ($k, $v) = @_;
+                $hreq->headers->push_header($k, $v);
+            });
             $hreq->content($preq->content);
 
             my ($backend_names) = $self->fire('select_backend', $hreq);
@@ -132,10 +135,17 @@ sub send_backend {
 
     $self->fire(munge_request => ($backend, $req));
 
+    my %headers;
+    $req->headers->scan(sub {
+        my ($key, $value) = @_;
+        $headers{$key} = $value;
+    });
+
     my $cv = AE::cv;
     my $guard; $guard = AnyEvent::HTTP::http_request(
         $req->method,
         $req->uri,
+        headers => \%headers,
         persistent => 0,
         tcp_connect => sub {
             # Override tcp_connect so we connect to the specified
