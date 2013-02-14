@@ -257,7 +257,7 @@ __END__
 
 =head1 NAME
 
-Geest - Perl Port of Geest
+Geest - Perl Port of Kage
 
 =head1 SYNOPSIS
 

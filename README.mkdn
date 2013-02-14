@@ -1,6 +1,6 @@
 # NAME
 
-Geest - Perl Port of Geest
+Geest - Perl Port of Kage
 
 # SYNOPSIS
 
