@@ -373,6 +373,10 @@ responses:
 And voila, you get to check if you have any differences between your current
 development version and the production server.
 
+=head1 DEBUG
+
+When you set C<KAGE_DEBUG> to a non-zero value, debug output will be available.
+
 =head1 AUTHOR
 
 Daisuke Maki C<< <daisuke@endeworks.jp> >>
