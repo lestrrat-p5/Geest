@@ -67,35 +67,79 @@ sub add_backend {
 sub psgi_app {
     my $self = shift;
 
+    # Do some sanity checks...
+    # Make sure that we have backends registered
+    {
+        my $backends = $self->backends;
+        if (keys %$backends < 1) {
+            Carp::croak("No backends registered! Can't proceed");
+        }
+
+        my $master = $self->master;
+        if (! $master) {
+            Carp::croak("No master backend registered! Can't proceed");
+        }
+    }
+
     return sub {
         my $env = shift;
+
+        # Do away with stuff you don't really need to postpone.
+        my $preq = Plack::Request->new($env);
+        my $hreq = HTTP::Request->new($preq->method, $preq->uri);
+        $preq->headers->scan(sub {
+            my ($k, $v) = @_;
+            $hreq->headers->push_header($k, $v);
+        });
+        $hreq->content($preq->content);
+
         return sub {
             my $responder = shift;
 
-            my $preq = Plack::Request->new($env);
-            my $hreq = HTTP::Request->new($preq->method, $preq->uri);
-            $preq->headers->scan(sub {
-                my ($k, $v) = @_;
-                $hreq->headers->push_header($k, $v);
-            });
-            $hreq->content($preq->content);
-
+            my $backends = $self->backends;
             my ($backend_names) = $self->fire('select_backend', $hreq);
+            if (! $backend_names) {
+                # You didn't specify any backends for me? hmmm...
+                # Well, then let's just get all the backends...
+                $backend_names = [ keys %$backends ];
+            }
+
             if (DEBUG) {
                 local $Log::Minimal::AUTODUMP = 1;
                 debugf("Backend names: %s", $backend_names);
             }
-            my $backends = $self->backends;
 
-            # When all sub-requests are done, call the responder
+            # Keep track of this request
+            my %state = (
+                sent_reply => 0,
+                reply_on_master =>
+                    !!(grep { $_ eq $self->master } @$backend_names),
+            );
+
+            # Check at which point we should reply to the client.
+            # If the list of backends contains the master backend,
+            # we honor that. Otherwise, just reply when the earliest
+            # reply comes in
+            # This is where we hold the responses
             my %responses;
+
+            # When all sub-requests are done, fire the backend_finished
+            # hook. Note that this will most likely fire AFTER the
+            # client has received a response. See $respond_cv below
             my $main_cv = AE::cv {
                 if (DEBUG) {
                     debugf("Received all responses");
                 }
                 $self->fire(backend_finished => \%responses);
+
+                # Explicitly free the response so we don't possibly
+                # hog all the memory 
+                undef %responses;
+                undef %state;
             };
 
+            # When the master server responds, we reply to the client.
+            # Waiting for all the backends would be silly.
             my $respond_cv = AE::cv {
                 $responder->($_[0]->recv);
             };
@@ -112,14 +156,29 @@ sub psgi_app {
                 my $cv = $self->send_backend($backend, $hreq->clone);
                 $cv->cb(sub {
                     $response{response} = HTTP::Message::PSGI::res_from_psgi($cv->recv);
-                    if ($backend->name eq $self->master) {
-                        if (DEBUG) {
-                            debugf("Received response from master, returning to client");
-                        }
-                        $respond_cv->send($cv->recv);
+                    $main_cv->end;
+                    if ($state{sent_reply}) {
+                        # We hav ealready sent a reply. short-circuit.
+                        return;
                     }
 
-                    $main_cv->end;
+                    if ($state{reply_on_master}) {
+                        # check if this is master
+                        if ($backend->name eq $self->master) {
+                            if (DEBUG) {
+                                debugf("Received response from '%s' (master), replying to client", $backend->name);
+                            }
+                            $respond_cv->send($cv->recv);
+                            $state{sent_reply}++;
+                        }
+                    } else {
+                        # Nothing specified, just reply 
+                        if (DEBUG) {
+                            debugf("Received response from '%s', replying to client", $backend->name);
+                        }
+                        $respond_cv->send($cv->recv);
+                        $state{sent_reply}++;
+                    }
                 });
             }
         };
@@ -167,13 +226,18 @@ sub send_backend {
             );
         },
         sub {
+            # Free me, baby.
             undef $guard;
+
             if (DEBUG) {
                 debugf("Received response from %s => code = %s, message = %s", $backend->name, $_[1]->{Status}, $_[1]->{Reason});
             }
+            # Remove these pseudo-headers from AE::HTTP
             delete $_[1]->{URL};
             delete $_[1]->{HTTPVersion};
             delete $_[1]->{Reason};
+
+            # Notify the condvar with a PSGI response.
             $cv->send([
                 delete $_[1]->{Status},
                 [ %{$_[1]} ],
