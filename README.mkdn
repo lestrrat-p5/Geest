@@ -1,14 +1,14 @@
 # NAME
 
-Kage - Perl Port of Kage
+Geest - Perl Port of Geest
 
 # SYNOPSIS
 
     # app.psgi
     use strict;
-    use Kage;
+    use Geest;
 
-    my $server = Kage->new;
+    my $server = Geest->new;
     $server->add_master(production => (
         host => "myapp.production.example.com",
         port => 80
@@ -99,7 +99,7 @@ responses:
         my ($responses) = @_;
         # $responses = {
         #    name_of_backend => {
-        #       backend  => ...,  # Kage::Backend object
+        #       backend  => ...,  # Geest::Backend object
         #       response => ...,  # HTTP::Response object
         #       request  => ...,  # HTTP::Request object
         #    },
@@ -115,6 +115,10 @@ responses:
 
 And voila, you get to check if you have any differences between your current
 development version and the production server.
+
+# DEBUG
+
+When you set `GEEST_DEBUG` to a non-zero value, debug output will be available.
 
 # AUTHOR
 

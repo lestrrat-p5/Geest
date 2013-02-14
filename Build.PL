@@ -1,11 +1,15 @@
 use strict;
-use Module::Build::Pluggable qw(
-    Repository
-    ReadmeMarkdownFromPod
-);
+BEGIN {
+    my @plugins = qw(Repository);
+    if (! -f "README.mkdn") {
+        push @plugins, "ReadmeMarkdownFromPod";
+    }
+    require Module::Build::Pluggable;
+    Module::Build::Pluggable->import(@plugins);
+}
 
 my $builder = Module::Build::Pluggable->new(
-    module_name         => 'Kage',
+    module_name         => 'Geest',
     license             => 'artistic_2',
     configure_requires  => {
         'Module::Build'             => '0.40',

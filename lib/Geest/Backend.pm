@@ -1,4 +1,4 @@
-package Kage::Backend;
+package Geest::Backend;
 use Moo;
 
 has host => (

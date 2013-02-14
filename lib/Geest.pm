@@ -1,4 +1,4 @@
-package Kage;
+package Geest;
 use Moo;
 use AnyEvent;
 use AnyEvent::HTTP ();
@@ -8,11 +8,11 @@ use HTTP::Request;
 use HTTP::Response;
 use Log::Minimal;
 use Plack::Request;
-use Kage::Backend;
-use constant DEBUG => !!$ENV{KAGE_DEBUG};
+use Geest::Backend;
+use constant DEBUG => !!$ENV{GEEST_DEBUG};
 our $VERSION = '0.01';
 BEGIN {
-    $Log::Minimal::ENV_DEBUG = "KAGE_DEBUG";
+    $Log::Minimal::ENV_DEBUG = "GEEST_DEBUG";
     $Log::Minimal::PRINT = sub {
         my ($time, $type, $message) = @_;
         print STDERR "$time [$type] $message\n";
@@ -61,7 +61,7 @@ sub add_master {
 
 sub add_backend {
     my ($self, $name, %args) = @_;
-    $self->backends->{$name} = Kage::Backend->new(name => $name, %args);
+    $self->backends->{$name} = Geest::Backend->new(name => $name, %args);
 }
 
 sub psgi_app {
@@ -257,15 +257,15 @@ __END__
 
 =head1 NAME
 
-Kage - Perl Port of Kage
+Geest - Perl Port of Geest
 
 =head1 SYNOPSIS
 
     # app.psgi
     use strict;
-    use Kage;
+    use Geest;
 
-    my $server = Kage->new;
+    my $server = Geest->new;
     $server->add_master(production => (
         host => "myapp.production.example.com",
         port => 80
@@ -356,7 +356,7 @@ responses:
         my ($responses) = @_;
         # $responses = {
         #    name_of_backend => {
-        #       backend  => ...,  # Kage::Backend object
+        #       backend  => ...,  # Geest::Backend object
         #       response => ...,  # HTTP::Response object
         #       request  => ...,  # HTTP::Request object
         #    },
@@ -375,7 +375,7 @@ development version and the production server.
 
 =head1 DEBUG
 
-When you set C<KAGE_DEBUG> to a non-zero value, debug output will be available.
+When you set C<GEEST_DEBUG> to a non-zero value, debug output will be available.
 
 =head1 AUTHOR
 
