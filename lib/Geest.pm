@@ -297,6 +297,14 @@ Why does this exist? Because I felt like writing it, duh.
 In its essence, this module is just an HTTP proxy server. It receives requests
 from the client, and broadcasts the requests to multiple backends.
 
+Why would you want this? For example, you can put this in front of your
+staging app server while you're refactoring your code. Geest can be configured
+to access your production server AND your refactored server, and to show
+any differences in the content received. This way you can avoid breaking
+your existing code.
+
+=head1 HOW GEEST PROCESSES REQUESTS
+
 Backends consist of one "master", and one or more others. The client only
 receives response from the master. This comes in handy depending on where you
 put the kage proxy. See example later.
