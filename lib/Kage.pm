@@ -291,8 +291,91 @@ Kage - Perl Port of Kage
 
 =head1 DESCRIPTION
 
-This is a port of kage to perl. Why does this exist? Because I felt like writing
-it, duh.
+This is a port of kage (https://github.com/cookpad/kage) to perl. 
+Why does this exist? Because I felt like writing it, duh.
+
+In its essence, this module is just an HTTP proxy server. It receives requests
+from the client, and broadcasts the requests to multiple backends.
+
+Backends consist of one "master", and one or more others. The client only
+receives response from the master. This comes in handy depending on where you
+put the kage proxy. See example later.
+
+Backends can be registered through the C<add_backend()> method (or 
+C<add_master()>, if you are adding a master backend)
+
+    $server->add_backend(name_of_backend => (
+        host => ...,
+        port => ...
+    ));
+
+By default all backends are used, but you may change this by setting the
+C<select_backend> hook:
+
+    $server->on(select_backend => sub {
+        my ($request) = @_; # HTTP::Request object
+        ...
+    });
+
+The callback receives the HTTP::Request object representing the original
+client request. You can, for example, choose to send all GET requests to
+servers A and B, and everything else to only B
+
+    $server->on(select_backend => sub {
+        my ($request) = @_;
+        if ($request->method eq 'GET') {
+            return [ 'A', 'B' ];
+        } else {
+            return [ 'A' ];
+        }
+    });
+
+The proxy asynchronously connects to the hosts specified by the method
+above, and then send them the same request. If you want to change the
+requests being sent to each backend, you can do so in the C<munge_request>
+hook:
+
+    $server->on(munge_request => sub {
+        my ($backend, $request) = @_;
+        # Do what you will to $request
+    });
+
+When the backend responds, the response is accumulated in memory. If
+the list of backends contains the "master" backend, then the client will
+receive the response when the proxy receives a response from the master.
+Otherwise, the first response is used to reply to the client.
+
+When all the backends are finished, the C<backend_finished> hook is called.
+You can do any verification you need to do in this hook. For example,
+the most simple check would be to check the difference between the
+responses:
+
+    use Text::Diff;
+
+    $server->on(backend_finished => sub {
+        my ($responses) = @_;
+        # $responses = {
+        #    name_of_backend => {
+        #       backend  => ...,  # Kage::Backend object
+        #       response => ...,  # HTTP::Response object
+        #       request  => ...,  # HTTP::Request object
+        #    },
+        #    ...
+        # };
+
+        my $data_prod = $responses->{prod}->{response}->decoded_content;
+        my $data_dev  = $responses->{dev}->{response}->decoded_content;
+        if ($data_prod ne $data_dev) {
+            print STDERR diff(\$data_prod, $data_dev);
+        }
+    });
+
+And voila, you get to check if you have any differences between your current
+development version and the production server.
+
+=head1 AUTHOR
+
+Daisuke Maki C<< <daisuke@endeworks.jp> >>
 
 =cut
 
