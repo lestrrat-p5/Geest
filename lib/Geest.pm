@@ -374,6 +374,8 @@ responses:
         my $data_prod = $responses->{prod}->{response}->decoded_content;
         my $data_dev  = $responses->{dev}->{response}->decoded_content;
         if ($data_prod ne $data_dev) {
+            # You probably want to check that both responses are
+            # content_type -> text/* before running diff()
             print STDERR diff(\$data_prod, $data_dev);
         }
     });
