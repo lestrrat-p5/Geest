@@ -205,6 +205,7 @@ sub send_backend {
         $req->method,
         $req->uri,
         headers => \%headers,
+        recurse => 0,
         persistent => 0,
         tcp_connect => sub {
             # Override tcp_connect so we connect to the specified
