@@ -1,5 +1,10 @@
 Changes
 =======
 
+0.02 - Feb 19 2013
+    - Set "recurse" to 0, so redirects are sent back to the client
+    - Set "body" to $req->content, so POST and other methods that send
+      content are properly proxied.
+
 0.01 - Feb 14 2013
     - Initial Release

@@ -10,7 +10,7 @@ use Log::Minimal;
 use Plack::Request;
 use Geest::Backend;
 use constant DEBUG => !!$ENV{GEEST_DEBUG};
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 BEGIN {
     $Log::Minimal::ENV_DEBUG = "GEEST_DEBUG";
     $Log::Minimal::PRINT = sub {
