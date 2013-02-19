@@ -371,6 +371,9 @@ responses:
         #    },
         #    ...
         # };
+        if (! $responses->{prod} && $responses->{dev}) {
+            return;
+        }
 
         my $data_prod = $responses->{prod}->{response}->decoded_content;
         my $data_dev  = $responses->{dev}->{response}->decoded_content;
