@@ -306,9 +306,10 @@ your existing code.
 
 =head1 HOW GEEST PROCESSES REQUESTS
 
-Backends consist of one "master", and one or more others. The client only
-receives response from the master. This comes in handy depending on where you
-put the kage proxy. See example later.
+Backends consist of one "master", and one or more others. The response received
+from the master is preferred over other backends, but in cases where you 
+specified to retrieve from backends other than the master, the fastest 
+response is used.
 
 Backends can be registered through the C<add_backend()> method (or 
 C<add_master()>, if you are adding a master backend)
@@ -371,7 +372,7 @@ responses:
         #    },
         #    ...
         # };
-        if (! $responses->{prod} && $responses->{dev}) {
+        if (! $responses->{prod} || ! $responses->{dev}) {
             return;
         }
 
