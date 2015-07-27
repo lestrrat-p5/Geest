@@ -205,6 +205,7 @@ sub send_backend {
         $req->method,
         $req->uri,
         headers => \%headers,
+        body    => $req->content,
         recurse => 0,
         persistent => 0,
         tcp_connect => sub {
